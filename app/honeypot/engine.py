@@ -13,9 +13,16 @@ class ArachneTrap:
         # Initialize in case of timeout
         username, password = "TIMEOUT", "TIMEOUT"
         try:
-            writer.write(b'Cisco IOS Software, C2900 Software (C2900-UNIVERSALK9-M)\n')
-            writer.write(b'Copyright (c) 1986-2018 by Cisco Systems, Inc.\n')
-            writer.write(b'User Access Verification\n\n')
+            banner = (
+                b"*************************************************************\n"
+                b"* UNAUTHORIZED ACCESS TO THIS NETWORK DEVICE IS PROHIBITED. *\n"
+                b"* ALL ACTIVITIES ARE MONITORED AND LOGGED.                  *\n"
+                b"*************************************************************\n\n"
+                b"Cisco IOS Software, C2900 Software (C2900-UNIVERSALK9-M)\n"
+                b"Copyright (c) 1986-2018 by Cisco Systems, Inc.\n"
+                b"User Access Verification\n"
+            )
+            writer.write(banner)
             writer.write(b'Username: ')
             await writer.drain()
             user_raw = await asyncio.wait_for(reader.read(100), timeout=10)
