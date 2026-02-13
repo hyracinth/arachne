@@ -2,7 +2,7 @@ import asyncio
 from app.honeypot.engine import ArachneTrap
 
 if __name__ == '__main__':
-    trap = ArachneTrap(port=2323)
+    trap = ArachneTrap(ports=[2323])
     try:
         asyncio.run(trap.start())
     except KeyboardInterrupt:
