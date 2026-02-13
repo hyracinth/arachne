@@ -29,13 +29,13 @@ class ArachneDB:
             # Set search path to schema
             cur.execute("SET search_path TO arachne, public")
         return conn
-    
-    def add_attack(self, ip, user=None, password=None, city=None, country=None, latitude=None, longitude=None):
+
+    def add_attack(self, ip, username=None, password=None, city=None, country=None, latitude=None, longitude=None):
         if not validate_ip(ip):
             raise ValueError(f"Invalid IP address: {ip}")
         
         # TODO find better way to do this?
-        user = clean_input(user)
+        username = clean_input(username)
         password = clean_input(password)
         city = clean_input(city)
         country = clean_input(country)
@@ -51,5 +51,5 @@ class ArachneDB:
         conn = self._get_conn()
         with conn:
             with conn.cursor() as cur:
-                cur.execute(query, (ip, user, password, city, country, latitude, longitude))
+                cur.execute(query, (ip, username, password, city, country, latitude, longitude))
             conn.commit()

@@ -4,7 +4,7 @@ db = ArachneDB()
 
 db.add_attack(
     ip="192.168.1.1",
-    user="admin",
+    username="admin",
     password="secret",
     city="New York",
     country="USA",

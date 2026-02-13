@@ -1,0 +1,19 @@
+app\shared\database.py
+    create specific upload attack func for honeytrap to use
+        minimize inputs (ie long/lat probably not needed)
+    separate process to handle geolocation from ip?
+
+app\honeytrap\engine.py
+    log locally for hard copy?
+    set up a queue to capture requests faster
+    set up rate limiter (prevent loading up the db queries)
+
+
+
+
+
+
+===infra===
+Supabase - PostGreSql database
+Google Compute Engine - VM
+Google Cloud Run - Dashboard
