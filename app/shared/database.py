@@ -30,7 +30,7 @@ class ArachneDB:
             cur.execute("SET search_path TO arachne, public")
         return conn
 
-    def add_attack(self, ip, username=None, password=None, city=None, country=None, latitude=None, longitude=None):
+    def add_attack(self, ip, username=None, password=None, city=None, country=None, latitude=None, longitude=None, notes=None):
         if not validate_ip(ip):
             raise ValueError(f"Invalid IP address: {ip}")
         
@@ -39,15 +39,16 @@ class ArachneDB:
         password = clean_input(password)
         city = clean_input(city)
         country = clean_input(country)
+        notes = clean_input(notes, 1024)
 
         # Use parameterized query to prevent SQL injection
         query = """
-                INSERT INTO attacks (ip_address, username, password, city, country, latitude, longitude)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO attacks (ip_address, username, password, city, country, latitude, longitude, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """
 
         conn = self._get_conn()
         with conn:
             with conn.cursor() as cur:
-                cur.execute(query, (ip, username, password, city, country, latitude, longitude))
+                cur.execute(query, (ip, username, password, city, country, latitude, longitude, notes))
             conn.commit()

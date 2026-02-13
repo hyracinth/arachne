@@ -1,17 +1,33 @@
+import time
 import asyncio
 from app.shared.database import ArachneDB
 
 class ArachneTrap:
-    def __init__(self, host='0.0.0.0', ports=[2323]):
+    def __init__(self, host='0.0.0.0', ports=[2323], cooldown=60):
         self.host = host
         self.ports = ports
+        self.cooldown = cooldown
+        self.lastseen = {}
         self.db = ArachneDB()
 
+    def is_allowed(self, ip):
+        now = time.time()
+        if ip in self.lastseen and now - self.lastseen[ip] < self.cooldown:
+            return False
+        self.lastseen[ip] = now
+        return True
+
     async def handle_bot(self, reader, writer):
-        ip, port = writer.get_extra_info('peername')
-        print(f"Connection from {ip}:{port}")
+        ip, _ = writer.get_extra_info('peername')
+        print(f"[*] Connection from {ip}")
+
+        # Throttle repeated connections from the same IP
+        if not self.is_allowed(ip):
+            return
+
         # Initialize in case of timeout
         username, password = "TIMEOUT", "TIMEOUT"
+        full_payload = None
         try:
             banner = (
                 b"*************************************************************\n"
@@ -25,21 +41,30 @@ class ArachneTrap:
             writer.write(banner)
             writer.write(b'Username: ')
             await writer.drain()
-            user_raw = await asyncio.wait_for(reader.read(100), timeout=10)
-            username = user_raw.decode().strip() or ""
+            user_raw = await asyncio.wait_for(reader.read(1024), timeout=10)
+            username = user_raw.decode(errors='ignore').strip() or ""
 
-            writer.write(b'\nPassword: ')
-            await writer.drain()
-            pass_raw = await asyncio.wait_for(reader.read(100), timeout=10)
-
-            password = pass_raw.decode().strip() or ""
+            if username.startswith(("GET", "POST", "HEAD")):
+                try:
+                    raw_in = await asyncio.wait_for(reader.read(1024), timeout=10)
+                    data_in = raw_in.decode(errors='ignore').strip() or ""
+                except asyncio.TimeoutError:
+                    data_in = ""
+                full_payload = f"{username} {data_in}".strip()
+                username = "HTTP_PAYLOAD"
+                password = "HTTP_PAYLOAD"
+            else:
+                writer.write(b'\nPassword: ')
+                await writer.drain()
+                pass_raw = await asyncio.wait_for(reader.read(100), timeout=10)
+                password = pass_raw.decode(errors='ignore').strip() or ""
 
         except asyncio.TimeoutError:
-            print(f"Timeout for connection from {ip}:{port}")
+            print(f"Timeout for connection from {ip}")
         except Exception as e:
-            print(f"Error handling connection from {ip}:{port}: {e}")
+            print(f"Error handling connection from {ip}: {e}")
         finally:
-            self.db.add_attack(ip, username=username, password=password)
+            self.db.add_attack(ip, username=username, password=password, notes=full_payload)
             try:
                 writer.write(b'\nInvalid credentials. Connection closing.\n')
                 await writer.drain()
