@@ -47,7 +47,7 @@ class ArachneTrap:
             try:
                 server = await asyncio.start_server(self.handle_bot, self.host, port)
                 print(f"Honeytrap running on {self.host}:{port}")
-                servers.append(server)
+                servers.append(server.serve_forever())
             except Exception as e:
                 print(f"Failed to start server on port {port}: {e}")
         
