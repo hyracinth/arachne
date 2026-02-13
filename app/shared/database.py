@@ -13,11 +13,11 @@ def validate_ip(ip):
     except ValueError:
         return False
 
-def clean_input(value, max_len=255):
-    if value is None:
+def clean_input(data, max_len=255):
+    if data is None:
         return ""
     data = data[:max_len]
-    return str(char for char in data if char.isprintable()).strip()
+    return data.strip()
 
 class ArachneDB:
     def __init__(self):
@@ -39,8 +39,6 @@ class ArachneDB:
         password = clean_input(password)
         city = clean_input(city)
         country = clean_input(country)
-        latitude = clean_input(latitude, max_len=10)
-        longitude = clean_input(longitude, max_len=10)
 
         # Use parameterized query to prevent SQL injection
         query = """
