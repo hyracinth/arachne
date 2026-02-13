@@ -3,13 +3,13 @@ app\shared\database.py
         minimize inputs (ie long/lat probably not needed)
     separate process to handle geolocation from ip?
 
-app\honeytrap\engine.py
+app\honeypot\engine.py
     log locally for hard copy?
     set up a queue to capture requests faster
     set up rate limiter (prevent loading up the db queries)
 
 
-
+make a setup.sh for vm 
 
 
 
@@ -17,3 +17,44 @@ app\honeytrap\engine.py
 Supabase - PostGreSql database
 Google Compute Engine - VM
 Google Cloud Run - Dashboard
+
+
+
+===vm setup===
+# update checks for updates, upgrade upgrades
+    sudo apt update && sudo apt upgrade -y
+
+    sudo apt install -y python3-pip git
+
+    git clone https://github.com/hyracinth/arachne.git
+
+    cd arachne
+    pip install -r requirements.txt --break-system-packages
+
+Set up .env
+Set up Google firewall
+    > VPC Network > Firewall > Open 2323
+
+sudo adduser --system --group --home /home/arachne arachne
+sudo chown -R arachne:arachne /home/arachne/arachne
+sudo systemctl daemon-reload
+sudo systemctl enable arachne
+sudo systemctl start arachne
+
+sudo journalctl -u arachne -f
+
+
+sudo vim /etc/systemd/system/arachne.service
+[Unit]
+Description=Arachne Honeypot 
+After=network.target
+
+[Service]
+User=arachne
+Group=arachne
+WorkingDirectory=/home/arachne/arachne
+ExecStart=/usr/bin/python3 -m app.honeypot.main
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
