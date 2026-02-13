@@ -16,7 +16,7 @@ class ArachneTrap:
             writer.write(b'Cisco IOS Software, C2900 Software (C2900-UNIVERSALK9-M)\n')
             writer.write(b'Copyright (c) 1986-2018 by Cisco Systems, Inc.\n')
             writer.write(b'User Access Verification\n\n')
-            writer.write(b'\Username: ')
+            writer.write(b'Username: ')
             await writer.drain()
             user_raw = await asyncio.wait_for(reader.read(100), timeout=10)
             username = user_raw.decode().strip() or ""
