@@ -64,14 +64,24 @@ class ArachneTrap:
         except Exception as e:
             print(f"Error handling connection from {ip}: {e}")
         finally:
-            self.db.add_attack(ip, username=username, password=password, notes=full_payload)
+            try:
+                self.db.add_attack(ip, username=username, password=password, notes=full_payload)
+                print(f"Logged attack from {ip} with username '{username}' and password '{password}'")
+            except Exception as e:
+                print(f"Failed to log attack from {ip}: {e}")
+
             try:
                 writer.write(b'\nInvalid credentials. Connection closing.\n')
                 await writer.drain()
-            except:
+            except Exception as e:
+                print(f"Failed to send response to {ip}: {e}")
                 pass
-            writer.close()
-            await writer.wait_closed()
+            finally:
+                writer.close()
+                try:
+                    await writer.wait_closed()
+                except Exception:
+                    pass
 
     async def start(self):
         servers = []
