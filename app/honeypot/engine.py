@@ -44,7 +44,7 @@ class ArachneTrap:
             user_raw = await asyncio.wait_for(reader.read(1024), timeout=10)
             username = user_raw.decode(errors='ignore').strip() or ""
 
-            if username.startswith(("GET", "POST", "HEAD")):
+            if username.startswith(("GET", "POST", "HEAD")) or len(username) > 20:
                 try:
                     raw_in = await asyncio.wait_for(reader.read(1024), timeout=10)
                     data_in = raw_in.decode(errors='ignore').strip() or ""
