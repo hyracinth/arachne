@@ -65,11 +65,13 @@ class ArachneTrap:
             print(f"Error handling connection from {ip}: {e}")
         finally:
             try:
-                self.db.add_attack(ip, username=username, password=password, notes=full_payload)
+                self.db.insert_attack({"ip_address": ip, 
+                                       "username": username, 
+                                       "password": password, 
+                                       "notes": full_payload})
                 print(f"Logged attack from {ip} with username '{username}' and password '{password}'")
             except Exception as e:
                 print(f"Failed to log attack from {ip}: {e}")
-
             try:
                 writer.write(b'\nInvalid credentials. Connection closing.\n')
                 await writer.drain()

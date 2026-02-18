@@ -1,54 +1,76 @@
 import os
 import ipaddress
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+import psycopg2
 
 load_dotenv()
 
-def validate_ip(ip):
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
-
-def clean_input(data, max_len=255):
-    if data is None:
-        return ""
-    data = data[:max_len]
-    return data.strip()
-
 class ArachneDB:
+    FIELD_LIMITS = {
+        "default": 255,
+        "notes": 1024,
+    }
+
     def __init__(self):
+        self.conn_key = os.getenv("DATABASE_KEY")
         self.conn_url = os.getenv("DATABASE_URL")
+        self._client = None
 
     def _get_conn(self):
-        conn = psycopg2.connect(self.conn_url)
-        with conn.cursor() as cur:
-            # Set search path to schema
-            cur.execute("SET search_path TO arachne, public")
-        return conn
-
-    def add_attack(self, ip, username=None, password=None, city=None, country=None, latitude=None, longitude=None, notes=None):
-        if not validate_ip(ip):
-            raise ValueError(f"Invalid IP address: {ip}")
-        
-        # TODO find better way to do this?
-        username = clean_input(username)
-        password = clean_input(password)
-        city = clean_input(city)
-        country = clean_input(country)
-        notes = clean_input(notes, 1024)
-
-        # Use parameterized query to prevent SQL injection
-        query = """
-                INSERT INTO attacks (ip_address, username, password, city, country, latitude, longitude, notes)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """
-
-        conn = self._get_conn()
-        with conn:
+        if self._client is None or self._client.closed:
+            print("*** Connecting to Supabase ***")
+            conn = psycopg2.connect(self.conn_url)
             with conn.cursor() as cur:
-                cur.execute(query, (ip, username, password, city, country, latitude, longitude, notes))
-            conn.commit()
+                # Set search path to schema
+                cur.execute("SET search_path TO arachne, public")
+            self._client = conn
+        return self._client
+
+    def validate_ip(self, ip):
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    def clean_string(self, fieldname, data):
+        if data is None:
+            return ""
+        limit = self.FIELD_LIMITS.get(fieldname, self.FIELD_LIMITS["default"])
+        return data[:limit].strip()
+
+    def clean_input_dict(self, raw_dict):
+        clean_data = {}
+        ip = raw_dict.get('ip_address')
+        if self.validate_ip(ip):
+            clean_data['ip_address'] = ip
+        else:
+            raise ValueError(f'Invalid IP address: {ip}')
+
+        for key, value in raw_dict.items():
+            if key == 'ip_address':
+                continue          
+            elif isinstance(value, str):
+                clean_data[key] = self.clean_string(key, value)
+            else:
+                clean_data[key] = value
+        return clean_data
+
+    def insert_attack(self, raw_data):
+        clean_data = self.clean_input_dict(raw_data)
+        columns = clean_data.keys()
+        values = [clean_data[col] for col in columns]
+        placeholders = ["%s"] * len(values)
+
+        query = f'''
+                    INSERT INTO attacks ({', '.join(columns)})
+                    VALUES ({', '.join(placeholders)})
+                 '''
+        conn = self._get_conn()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, values)
+                conn.commit()
+        except Exception as e:
+            print(f'[DEBUG] Failed to insert into attack: {e}')

@@ -1,15 +1,15 @@
--- 1. Create the custom schema
 CREATE SCHEMA IF NOT EXISTS arachne;
 
--- 2. Create the table inside that schema
 CREATE TABLE arachne.attacks (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMPTZ DEFAULT NOW(),
-    ip_address TEXT NOT NULL,
-    username TEXT,
-    password TEXT,
-    city TEXT,
-    country TEXT,
-    latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION
-);
+  id SERIAL NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  ip_address TEXT NOT NULL,
+  username TEXT NULL,
+  password TEXT NULL,
+  city TEXT NULL,
+  country TEXT NULL,
+  latitude DOUBLE PRECISION NULL,
+  longitude DOUBLE PRECISION NULL,
+  notes TEXT NULL,
+  CONSTRAINT attacks_pkey PRIMARY KEY (id)
+)
