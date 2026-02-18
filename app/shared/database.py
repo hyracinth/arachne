@@ -2,6 +2,7 @@ import os
 import ipaddress
 from dotenv import load_dotenv
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 load_dotenv()
 
@@ -12,7 +13,6 @@ class ArachneDB:
     }
 
     def __init__(self):
-        self.conn_key = os.getenv("DATABASE_KEY")
         self.conn_url = os.getenv("DATABASE_URL")
         self._client = None
 
@@ -39,13 +39,14 @@ class ArachneDB:
         limit = self.FIELD_LIMITS.get(fieldname, self.FIELD_LIMITS["default"])
         return data[:limit].strip()
 
-    def clean_input_dict(self, raw_dict):
+    def clean_input_dict(self, raw_dict, check_ip=True):
         clean_data = {}
         ip = raw_dict.get('ip_address')
-        if self.validate_ip(ip):
-            clean_data['ip_address'] = ip
-        else:
-            raise ValueError(f'Invalid IP address: {ip}')
+        if check_ip:
+            if self.validate_ip(ip):
+                clean_data['ip_address'] = ip
+            else:
+                raise ValueError(f'Invalid IP address: {ip}')
 
         for key, value in raw_dict.items():
             if key == 'ip_address':
@@ -74,3 +75,33 @@ class ArachneDB:
                 conn.commit()
         except Exception as e:
             print(f'[DEBUG] Failed to insert into attack: {e}')
+
+    def update_attack(self, id, raw_data):
+        clean_data = self.clean_input_dict(raw_data, False)
+
+        columns = raw_data.keys()
+        set_clause = ", ".join([f"{col} = %s" for col in columns])
+        values = [clean_data[col] for col in columns]
+
+        query = f'''
+                    UPDATE attacks
+                    SET {set_clause} WHERE id = %s
+                 '''
+        values.append(id)
+        # TODO Check to see if anything's null, don't want to show null
+
+        conn = self._get_conn()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, values)
+            print(f'[DEBUG] Updated attack {id} with {clean_data}')
+        except Exception as e:
+            print(f'[DEBUG] Failed to update attack {id}: {e}')
+
+    def get_pending_enrich(self, limit=30):
+        query = f'SELECT id, ip_address from attacks WHERE city is NULL LIMIT %s'
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (limit,))
+            return cur.fetchall()
