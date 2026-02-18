@@ -23,7 +23,7 @@ class GeoEnricher:
                     "longitude": data.get("lon"),
                 }
             else:
-                print(f'IP-API could not locate {ip}: {data.get('message')}')
+                print(f'IP-API could not locate {ip}: {data.get("message")}')
         except Exception as e:
             print(f'Error connecting to IP-API: {e}')
             return None
