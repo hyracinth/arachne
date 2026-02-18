@@ -1,5 +1,5 @@
-from app.shared.database import ArachneDB
-from app.workers.enricher import GeoEnricher
+from apps.shared.database import ArachneDB
+from apps.workers.enricher import GeoEnricher
 
 db = ArachneDB()
 if False:
@@ -14,6 +14,8 @@ if False:
     })
 if False:
     print(db.get_pending_enrich())
+
+# print(db.get_enriched())
 
 ge = GeoEnricher()
 if True:

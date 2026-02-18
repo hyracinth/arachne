@@ -1,5 +1,5 @@
 import asyncio
-from app.honeypot.engine import ArachneTrap
+from apps.honeypot.engine import ArachneTrap
 
 if __name__ == '__main__':
     trap = ArachneTrap(ports=[2323])
