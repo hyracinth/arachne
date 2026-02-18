@@ -64,8 +64,8 @@ class ArachneDB:
         placeholders = ["%s"] * len(values)
 
         query = f'''
-                    INSERT INTO attacks ({', '.join(columns)})
-                    VALUES ({', '.join(placeholders)})
+                 INSERT INTO attacks ({', '.join(columns)})
+                 VALUES ({', '.join(placeholders)})
                  '''
         conn = self._get_conn()
         try:
@@ -84,8 +84,8 @@ class ArachneDB:
         values = [clean_data[col] for col in columns]
 
         query = f'''
-                    UPDATE attacks
-                    SET {set_clause} WHERE id = %s
+                 UPDATE attacks
+                 SET {set_clause} WHERE id = %s
                  '''
         values.append(id)
         # TODO Check to see if anything's null, don't want to show null
@@ -100,7 +100,20 @@ class ArachneDB:
             print(f'[DEBUG] Failed to update attack {id}: {e}')
 
     def get_pending_enrich(self, limit=30):
-        query = f'SELECT id, ip_address from attacks WHERE city is NULL LIMIT %s'
+        query = f'SELECT id, ip_address FROM attacks WHERE city is NULL LIMIT %s'
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (limit,))
+            return cur.fetchall()
+        
+    def get_enriched(self, limit=100):
+        query = f'''
+                 SELECT timestamp, ip_address, username, password, city, country, latitude, longitude
+                 FROM attacks 
+                 WHERE city is NOT NULL 
+                 ORDER BY timestamp DESC 
+                 LIMIT %s
+                 '''
         conn = self._get_conn()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (limit,))

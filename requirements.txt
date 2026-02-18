@@ -1,3 +1,11 @@
-psycopg2-binary==2.9.9  # driver for Supabase
-python-dotenv==1.0.1    # loading from .env file
+# Web Dashboard
+shiny==0.7.1            
+ipyleaflet==0.18.2
+shinywidgets==0.3.3
+
+# Utils
 requests==2.31.0        # http requests
+wheel==0.42.0           # easier packaging
+python-dotenv==1.0.1    # loading from .env file
+psycopg2-binary==2.9.9  # driver for Supabase
+pandas==2.2.0

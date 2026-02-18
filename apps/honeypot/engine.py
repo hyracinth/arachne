@@ -1,6 +1,6 @@
 import time
 import asyncio
-from app.shared.database import ArachneDB
+from apps.shared.database import ArachneDB
 
 class ArachneTrap:
     def __init__(self, host='0.0.0.0', ports=[2323], cooldown=60):

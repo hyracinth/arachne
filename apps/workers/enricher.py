@@ -1,6 +1,6 @@
 import requests
 import time
-from app.shared.database import ArachneDB
+from apps.shared.database import ArachneDB
 
 class GeoEnricher:
     def __init__(self):
@@ -30,12 +30,14 @@ class GeoEnricher:
 
     def enrich_db(self):
         while True:
-            if len(self.seen_ips) > 1000: 
+            if len(self.seen_ips) > 500: 
                 self.seen_ips.clear()
 
             curr_batch = self.db.get_pending_enrich(1)
             if len(curr_batch) == 0:
-                return
+                print(f'No pending enrichments, sleeping for 2 minutes...')
+                time.sleep(120)
+                continue
 
             for curr_record in curr_batch:
                 called_api = False
@@ -52,11 +54,14 @@ class GeoEnricher:
 
                 if geo_data:
                     self.db.update_attack(id, geo_data)
+                else:
+                    self.db.update_attack(id, {"city":"FAILED"})
 
                 # Rate limit
                 # TODO switch to bulk or find better way
                 if called_api:
                     time.sleep(1.5)
 
-            # Just run one iteration for now
-            return
+if __name__ == "__main__":
+    enricher = GeoEnricher()
+    enricher.enrich_db()
