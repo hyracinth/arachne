@@ -1,7 +1,5 @@
-FROM python:3.13-slim
+FROM python:3.12-slim
 
-# Install the necessary system libraries for PostgreSQL
-# 3.13 needs these to build the database bridge correctly
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
@@ -20,4 +18,5 @@ COPY . .
 EXPOSE 8080
 
 # Start Shiny
-CMD ["shiny", "run", "apps/dashboard/app.py", "--host", "0.0.0.0", "--port", "8080"]
+# CMD ["shiny", "run", "apps/dashboard/app.py", "--host", "0.0.0.0", "--port", "8080"]
+CMD python -m shiny run apps/dashboard/app.py --host 0.0.0.0 --port $PORT
