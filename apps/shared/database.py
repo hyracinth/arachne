@@ -37,7 +37,7 @@ class ArachneDB:
         if data is None:
             return ""
         limit = self.FIELD_LIMITS.get(fieldname, self.FIELD_LIMITS["default"])
-        return data.replace('\x00')[:limit].strip()
+        return data.replace('\x00', '')[:limit].strip()
 
     def clean_input_dict(self, raw_dict, check_ip=True):
         clean_data = {}
