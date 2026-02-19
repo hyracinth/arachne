@@ -8,4 +8,5 @@ requests==2.31.0        # http requests
 wheel==0.42.0           # easier packaging
 python-dotenv==1.0.1    # loading from .env file
 psycopg2-binary==2.9.9  # driver for Supabase
+numpy==1.26.4           # pandas 2.2.0 needs <2
 pandas==2.2.0

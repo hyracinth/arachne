@@ -37,7 +37,7 @@ class ArachneDB:
         if data is None:
             return ""
         limit = self.FIELD_LIMITS.get(fieldname, self.FIELD_LIMITS["default"])
-        return data[:limit].strip()
+        return data.replace('\x00')[:limit].strip()
 
     def clean_input_dict(self, raw_dict, check_ip=True):
         clean_data = {}
@@ -64,7 +64,7 @@ class ArachneDB:
         placeholders = ["%s"] * len(values)
 
         query = f'''
-                 INSERT INTO attacks ({', '.join(columns)})
+                 INSERT INTO arachne.attacks ({', '.join(columns)})
                  VALUES ({', '.join(placeholders)})
                  '''
         conn = self._get_conn()
@@ -84,7 +84,7 @@ class ArachneDB:
         values = [clean_data[col] for col in columns]
 
         query = f'''
-                 UPDATE attacks
+                 UPDATE arachne.attacks
                  SET {set_clause} WHERE id = %s
                  '''
         values.append(id)
@@ -100,7 +100,7 @@ class ArachneDB:
             print(f'[DEBUG] Failed to update attack {id}: {e}')
 
     def get_pending_enrich(self, limit=30):
-        query = f'SELECT id, ip_address FROM attacks WHERE city is NULL LIMIT %s'
+        query = f'SELECT id, ip_address FROM arachne.attacks WHERE city is NULL LIMIT %s'
         conn = self._get_conn()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (limit,))
@@ -109,7 +109,7 @@ class ArachneDB:
     def get_enriched(self, limit=100):
         query = f'''
                  SELECT timestamp, ip_address, username, password, city, country, latitude, longitude
-                 FROM attacks 
+                 FROM arachne.attacks 
                  WHERE city is NOT NULL 
                  ORDER BY timestamp DESC 
                  LIMIT %s

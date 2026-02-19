@@ -2,6 +2,10 @@
 .env
 .git
 .gitignore
+notes.txt
+testdb.py
+README.md
+sql/
 
 # python 
 __pycache__/
