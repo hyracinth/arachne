@@ -1,0 +1,18 @@
+# security 
+.env
+.git
+.gitignore
+
+# python 
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# os
+.DS_Store
+Thumbs.db
+
+# shiny/dashboard 
+.ipynb_checkpoints/

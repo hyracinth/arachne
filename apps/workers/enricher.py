@@ -1,3 +1,4 @@
+import os
 import requests
 import time
 from apps.shared.database import ArachneDB
@@ -10,6 +11,22 @@ class GeoEnricher:
             'User-Agent': 'Arachne/1.0'
         }
 
+    def send_notification(self, ip, geo_data):
+        webhook_url = os.getenv("WEBHOOK_URL")
+
+        # Format a nice message
+        message = {
+            "content": f"**New Attack Captured!**\n"
+           f"**IP:** `{ip}`\n"
+           f"**Location:** {geo_data.get('city')}, {geo_data.get('country')}\n"
+           f"**Map:** [Google Maps](https://www.google.com/maps?q={geo_data.get('latitude')},{geo_data.get('longitude')})"
+        }
+
+        try:
+            requests.post(webhook_url, json=message, timeout=5)
+        except Exception as e:
+            print(f"Failed to send webhook: {e}")
+        
     def get_geo_data(self, ip):
         try:
             response = requests.get(f'http://ip-api.com/json/{ip}', headers=self.headers, timeout=5)

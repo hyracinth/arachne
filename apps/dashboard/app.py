@@ -44,7 +44,7 @@ def server(input, output, session):
     @render.data_frame
     def attack_table():
         try:
-            attacks = db.get_enriched()
+            attacks = db.get_enriched(50)
         except Exception as e:
             print(f'Error fetching attacks: {e}')
             return render.DataTable(pd.DataFrame(columns=[f'Error fetching attacks: {e}']))
