@@ -14,7 +14,6 @@ class GeoEnricher:
     def send_notification(self, ip, geo_data):
         webhook_url = os.getenv("WEBHOOK_URL")
 
-        # Format a nice message
         message = {
             "content": f"**New Attack Captured!**\n"
            f"**IP:** `{ip}`\n"
@@ -71,6 +70,7 @@ class GeoEnricher:
 
                 if geo_data:
                     self.db.update_attack(id, geo_data)
+                    self.send_notification(id, geo_data)
                 else:
                     self.db.update_attack(id, {"city":"FAILED"})
 
