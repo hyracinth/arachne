@@ -1,8 +1,10 @@
 # $env:PYTHONPATH = "."
 # shiny run --reload --launch-browser apps/dashboard/app.py
 
+from collections import Counter
+
 import pandas as pd
-from ipyleaflet import Map, Marker, basemaps, AwesomeIcon, AntPath, CircleMarker, Polyline
+from ipyleaflet import Map, Marker, basemaps, AwesomeIcon, CircleMarker, Polyline
 from ipywidgets import HTML # for popups
 from shiny import App, render, ui, reactive
 from shinywidgets import output_widget, render_widget
@@ -38,8 +40,13 @@ app_ui = ui.page_fillable(
         # Fallback: Target by stroke color because ipyleaflet seems to be ignoring class names
         # or applying them to parent groups, breaking direct css styling
         ui.tags.style("""
+            * {
+                font-family: 'Courier New', Courier, monospace;          
+            }
+                      
             .card { border: 1px solid #2a2a2a; background-color: #121212; }
 
+            /* attack line */
             path[stroke='#28f049']  {
                 animation: linePulse 4s ease-in-out infinite !important;
             }
@@ -49,6 +56,7 @@ app_ui = ui.page_fillable(
                 100% { opacity: 0.4; }
             }
 
+            /* target circle */
             path[stroke='red'] {
                 animation: beacon 3s ease-out infinite !important;
                 transform-origin: center;
@@ -59,30 +67,80 @@ app_ui = ui.page_fillable(
                 100% { transform: scale(1); opacity: 0.7; }
             }
 
+            /* slider bar (background) */
+            .irs-line {
+                background: #1a1a1a !important;
+                border: 1px solid #333 !important;
+                height: 8px !important;
+                top: 33px !important;
+            }
+
+            /* slider bar (selected) */
+            .irs-bar {
+                background: #28f049 !important;
+                border-top: 1px solid #28f049 !important;
+                border-bottom: 1px solid #28f049 !important;
+                height: 8px !important;
+                top: 33px !important;
+            }
+
+            /* slider bar (circle) */
+            .irs-handle {
+                background: #000 !important;
+                border: 2px solid #28f049 !important;
+                width: 16px !important;
+                height: 16px !important;
+                top: 28px !important;
+                box-shadow: 0 0 8px #28f049 !important; /* Makes the knob glow */
+                cursor: pointer !important;
+            }
+
+            /* slider bar (text) */
+            .irs-single, .irs-min, .irs-max {
+                background: transparent !important;
+                color: #28f049 !important;
+                font-family: 'Courier New', monospace !important;
+                font-weight: bold !important;
+            }
+
         """)
     ),
     ui.layout_columns(
         ui.card(
-            ui.card_header("project: arachne"),
+            ui.card_header("world map"),
             ui.p(output_widget("map")),
         ),
         ui.card(
             ui.card(
-                ui.card_header("scan duration"), 
-                ui.input_slider(id="duration_slider", label="", min=1, max=168, value=24),
+                ui.layout_columns(
+                    ui.div(
+                        ui.h5("Project:", style="padding-top:10%; color:#666;"),
+                        ui.h1("Arachne", style="font-family:Lucida Console; font-weight:700; color:#28f049;"),
+                    ),
+                    ui.card(
+                        ui.card_header("Hours Scanned"), 
+                        ui.input_slider(id="duration_slider", label="", min=1, max=168, value=24),
+                    ),
+                    col_widths=(5,7)
+                ),
+                ui.layout_columns(
+                    ui.value_box(
+                        title="Threat Count",
+                        value=ui.output_ui("duration_slider_value"),
+                    ),
+                    ui.value_box(
+                        title="Top Country",
+                        value=ui.output_ui("top_ip_value"),
+                    ),
+                    col_widths=(4,8)
+                ),
             ),
-            ui.card(
-                ui.card_header("total threats"), 
-                ui.output_text_verbatim("duration_slider_value"),),
             ui.card(
                 ui.card_header("attack logs"), 
-                ui.p("[HH:mm:ss] Logged attack from XYZ..."),
-                ui.p("[HH:mm:ss] Logged attack from ABC..."),
-                ui.p("[HH:mm:ss] Logged attack from AAA..."),
-                ui.p("[HH:mm:ss] Logged attack from BBB..."),
+                ui.output_ui("attacks_console_feed")
             ),
         ),
-        col_widths=(8,4)
+        col_widths=(7,5)
     )
 )
 
@@ -96,12 +154,43 @@ app_ui = ui.page_fillable(
 # )
 
 def server(input, output, session):
+    @render.ui
+    def attacks_console_feed():
+        attacks = enriched_attacks()
+        if not attacks:
+            return ui.div("Awaiting attacks", style="color: #444;")
+        
+        log_entries = [
+            ui.div(
+                ui.span(f"[{curr_attack.get('timestamp').strftime('%H:%M:%S')}] ", style="color: #666;"),
+                ui.span(f"ATTACK: {curr_attack.get('ip_address')} ", style="color: #14bb4c;"),
+                ui.span(f"via {curr_attack.get('city')} - {curr_attack.get('country', '??')}", style="color: #ff9d00;"),
+
+                style="font-size: 0.8rem; padding: 2px;"
+            ) for curr_attack in attacks[:40]
+        ]
+
+        return ui.div(log_entries, style="height: 400px; overflow-y: auto;")
+
+    @render.text
+    def top_ip_value():
+        attacks = enriched_attacks()
+        if not attacks:
+            return "N/A"
+        
+        countries = [a.get('country') for a in attacks if a.get('country')]
+        if not countries:
+            return "N/A"
+
+        top_ip, count = Counter(countries).most_common(1)[0]
+        return f"{top_ip}"
+
     @render.text
     def duration_slider_value():
-        return f"{len(enriched_attacks_map())}"
+        return f"{len(enriched_attacks())}"
     
     @reactive.calc
-    def enriched_attacks_map():
+    def enriched_attacks():
         try:
             data = db.get_enriched(input.duration_slider())
             return data if data else []
@@ -136,7 +225,7 @@ def server(input, output, session):
         if len(m.layers) > 1:
             m.layers = m.layers[:1]
 
-        attacks = enriched_attacks_map()
+        attacks = enriched_attacks()
 
         aggregated_attacks = {}
 

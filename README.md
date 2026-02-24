@@ -51,4 +51,4 @@ graph LR
 * DevOps: Docker, Linux (Ubuntu), GitHub Actions
 
 ## Development Journey
-This project is an iterative process of solving real world networking, database, and technical hurdles. To see the detailed journey, see **[Development Log](./DEVLOG.md)**.
+This project is an iterative process of solving real world networking, database, and technical hurdles. To see the details, see **[Development Log](./DEVLOG.md)**.
