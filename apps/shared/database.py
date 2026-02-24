@@ -109,10 +109,10 @@ class ArachneDB:
     def get_enriched(self, limit=100):
         query = f'''
                  SELECT timestamp, ip_address, username, password, city, country, latitude, longitude
-                 FROM arachne.attacks 
-                 WHERE city is NOT NULL 
-                 ORDER BY timestamp DESC 
-                 LIMIT %s
+                 FROM arachne.attacks
+                 WHERE city is NOT NULL
+                 AND timestamp >= (now() - interval '%s hour')
+                 ORDER BY timestamp DESC
                  '''
         conn = self._get_conn()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
