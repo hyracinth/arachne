@@ -4,6 +4,7 @@
 from collections import Counter
 
 import pandas as pd
+import plotly.express as px
 from ipyleaflet import Map, Marker, basemaps, AwesomeIcon, CircleMarker, Polyline
 from ipywidgets import HTML # for popups
 from shiny import App, render, ui, reactive
@@ -48,12 +49,12 @@ app_ui = ui.page_fillable(
 
             /* attack line */
             path[stroke='#28f049']  {
-                animation: linePulse 4s ease-in-out infinite !important;
+                animation: linePulse 2.5s ease-in-out infinite !important;
             }
             @keyframes linePulse {
-                0% { opacity: 0.4; }
-                50% { opacity: 0.8; }
-                100% { opacity: 0.4; }
+                0% { opacity: 0.7; }
+                50% { opacity: 1.0; }
+                100% { opacity: 0.7; }
             }
 
             /* target circle */
@@ -127,31 +128,24 @@ app_ui = ui.page_fillable(
                     ui.value_box(
                         title="Threat Count",
                         value=ui.output_ui("duration_slider_value"),
+                        showcase=None
                     ),
                     ui.value_box(
-                        title="Top Country",
-                        value=ui.output_ui("top_ip_value"),
+                        title="Top Threats",
+                        value=ui.output_ui("top_three_chart"),
+                        showcase=None
                     ),
                     col_widths=(4,8)
                 ),
             ),
             ui.card(
                 ui.card_header("attack logs"), 
-                ui.output_ui("attacks_console_feed")
+                ui.output_ui("attacks_console_feed"),
             ),
         ),
         col_widths=(7,5)
     )
 )
-
-# app_ui = ui.page_fluid(
-#     ui.panel_title("Arachne Monitor"),
-#     ui.input_dark_mode(),
-#     ui.navset_card_pill(
-#         ui.nav_panel("Live Map", output_widget("map")),
-#         ui.nav_panel("Data Grid", ui.output_data_frame("attack_table"))
-#     )
-# )
 
 def server(input, output, session):
     @render.ui
@@ -213,6 +207,28 @@ def server(input, output, session):
         
         return render.DataTable(df)
 
+    @render.ui
+    def top_three_chart():
+        try:
+            top_three = db.get_top_three(input.duration_slider())
+        except Exception as e:
+            print(f'Error fetching top three: {e}')
+            return render.DataTable(pd.DataFrame(columns=[f'Error fetching attacks: {e}']))
+        
+        bars = []
+        max_count = top_three[0]['count'] if top_three else 1
+        for record in top_three:
+            percentage = (record['count'] / max_count) * 100
+            bars.append(
+                ui.div(
+                    ui.div(f"{record['country']}: {record['count']}", style="font-size: 0.7rem; color: white;"),
+                    ui.div(
+                        ui.div(style=f"width: {percentage}%; background-color: #28f049; height: 8px; box-shadow: 0 0 5px #28f049;"),
+                        style="background-color: #1a1a1a; width: 100%; height: 8px; margin-bottom: 8px;"
+                    )
+                )
+            )
+        return ui.div(bars)
 
     @render_widget
     def map():

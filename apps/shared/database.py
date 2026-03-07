@@ -106,7 +106,7 @@ class ArachneDB:
             cur.execute(query, (limit,))
             return cur.fetchall()
         
-    def get_enriched(self, limit=100):
+    def get_enriched(self, duration=100):
         query = f'''
                  SELECT timestamp, ip_address, username, password, city, country, latitude, longitude
                  FROM arachne.attacks
@@ -116,5 +116,19 @@ class ArachneDB:
                  '''
         conn = self._get_conn()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, (limit,))
+            cur.execute(query, (duration,))
+            return cur.fetchall()
+        
+    def get_top_three(self, duration=3):
+        query = f'''
+                 SELECT country, count(*)
+                 FROM arachne.attacks
+                 WHERE timestamp >= (now() - interval '%s hour')
+                 GROUP BY country
+                 ORDER BY count desc
+                 LIMIT 3
+                 '''
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (duration,))
             return cur.fetchall()
